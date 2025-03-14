@@ -40,13 +40,13 @@ class CustomUserManager(BaseUserManager):
 # Custom User Model
 class CustomUser(AbstractUser):
     ROLE_CHOICES = (
-        ('user', 'Обычный пользователь'),
+        ('admin', 'Админ'),
         ('operator', 'Оператор'),
         ('curator', 'Куратор'),
         ('master', 'Мастер'),
     )
 
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='admin')
     username = None
     email = models.EmailField(_("email address"), unique=True)
 
