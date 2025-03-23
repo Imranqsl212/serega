@@ -71,34 +71,33 @@ class Order(models.Model):
     client_name = models.CharField(max_length=255)
     client_phone = models.CharField(max_length=20)
     description = models.TextField()
+    address = models.CharField(max_length=255, null=True, blank=True)  # Добавляем адрес
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='новый')
+    is_test = models.BooleanField(default=False)  # Поле для указания тестового заказа
 
-    # Operator who processes the order
     operator = models.ForeignKey(
         CustomUser,
         null=True,
         blank=True,
-        on_delete=models.SET_NULL,  # Prevent deletion failure
+        on_delete=models.SET_NULL,
         limit_choices_to={'role': 'operator'},
         related_name='processed_orders'
     )
 
-    # Curator who assigns the order
     curator = models.ForeignKey(
         CustomUser,
         null=True,
         blank=True,
-        on_delete=models.SET_NULL,  # Prevent deletion failure
+        on_delete=models.SET_NULL,
         limit_choices_to={'role': 'curator'},
         related_name='assigned_orders'
     )
 
-    # Master who performs the order
     assigned_master = models.ForeignKey(
         CustomUser,
         null=True,
         blank=True,
-        on_delete=models.SET_NULL,  # Prevent deletion failure
+        on_delete=models.SET_NULL,
         limit_choices_to={'role': 'master'},
         related_name='orders'
     )
