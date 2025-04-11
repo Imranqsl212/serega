@@ -19,5 +19,9 @@ urlpatterns = [
     path('users/masters/', get_masters, name='get_masters'),
     path('users/operators/', get_operators, name='get_operators'),
     path('users/curators/', get_curators, name='get_curators'),
+    path('balance/<int:user_id>/', get_user_balance, name='get_user_balance'),
+    path('balance/<int:user_id>/top-up/', top_up_balance, name='top_up_balance'),
+    path('balance/<int:user_id>/deduct/', deduct_balance, name='deduct_balance'),
+    path('balance/<int:user_id>/logs/', get_balance_logs, name='get_balance_logs'),
 
 ]

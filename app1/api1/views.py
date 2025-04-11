@@ -5,8 +5,8 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
-from .models import Order, CustomUser, IsOperator, IsCurator, IsMaster
-from .serializers import OrderSerializer, CustomUserSerializer
+from .models import Order, CustomUser, IsOperator, IsCurator, IsMaster, Balance, BalanceLog
+from .serializers import OrderSerializer, CustomUserSerializer, BalanceSerializer, BalanceLogSerializer
 
 
 # Create test order
@@ -202,4 +202,63 @@ def get_assigned_orders(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+@permission_classes([IsCurator])
+def get_user_balance(request, user_id):
+    try:
+        balance = Balance.objects.get(user_id=user_id)
+    except Balance.DoesNotExist:
+        return Response({'error': 'Balance not found'}, status=404)
 
+    serializer = BalanceSerializer(balance)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([IsCurator])
+def top_up_balance(request, user_id):
+    amount = request.data.get('amount')
+    note = request.data.get('note', '')
+
+    try:
+        user = CustomUser.objects.get(id=user_id)
+        balance, _ = Balance.objects.get_or_create(user=user)
+        balance.amount += float(amount)
+        balance.save()
+
+        BalanceLog.objects.create(user=user, operation='top_up', amount=amount, note=note)
+
+        return Response({'message': 'Balance topped up'}, status=200)
+    except CustomUser.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+
+@api_view(['POST'])
+@permission_classes([IsCurator])
+def deduct_balance(request, user_id):
+    amount = request.data.get('amount')
+    note = request.data.get('note', '')
+
+    try:
+        user = CustomUser.objects.get(id=user_id)
+        balance, _ = Balance.objects.get_or_create(user=user)
+
+        if balance.amount < float(amount):
+            return Response({'error': 'Insufficient balance'}, status=400)
+
+        balance.amount -= float(amount)
+        balance.save()
+
+        BalanceLog.objects.create(user=user, operation='deduct', amount=amount, note=note)
+
+        return Response({'message': 'Balance deducted'}, status=200)
+    except CustomUser.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+
+@api_view(['GET'])
+@permission_classes([IsCurator])
+def get_balance_logs(request, user_id):
+    logs = BalanceLog.objects.filter(user_id=user_id).order_by('-created_at')
+    serializer = BalanceLogSerializer(logs, many=True)
+    return Response(serializer.data)

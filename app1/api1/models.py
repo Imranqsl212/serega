@@ -44,6 +44,7 @@ class CustomUser(AbstractUser):
         ('operator', 'Оператор'),
         ('curator', 'Куратор'),
         ('master', 'Мастер'),
+        ('warranty_master', 'Гарантийный мастер'),
     )
 
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='admin')
@@ -56,6 +57,14 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.username} ({self.role})"
+
+
+class Balance(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='balance')
+    amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+
+    def __str__(self):
+        return f"Balance: {self.user.email} - {self.amount}"
 
 
 # Order Model
@@ -125,4 +134,22 @@ class IsMaster(permissions.BasePermission):
         return request.user.is_authenticated and request.user.role == 'master'
 
 
+
+class BalanceLog(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='logs')
+    action = models.CharField(max_length=100)  # пополнение, списание и т.п.
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.action} - {self.amount}"
+
+# Распределение прибыли
+class ProfitDistribution(models.Model):
+    master_percent = models.PositiveIntegerField(default=70)
+    curator_percent = models.PositiveIntegerField(default=20)
+    operator_percent = models.PositiveIntegerField(default=10)
+
+    def __str__(self):
+        return "Profit Distribution Settings"
 
